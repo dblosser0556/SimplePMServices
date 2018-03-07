@@ -6,9 +6,14 @@ using SimplePMServices.Models.Entities;
 
 namespace SimplePMServices.Models.Entities
 {
+    public class UserRole
+    {
+        public string RoleName;
+        public bool Selected;
+    }
     public class LoggedInUser
     {
         public User CurrentUser;
-        public List<string> Roles;
+        public List<UserRole> Roles;
     }
 }

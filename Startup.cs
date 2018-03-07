@@ -159,7 +159,7 @@ namespace SimplePMServices
             app.UseStaticFiles();
             app.UseDefaultFiles();
             // app.UseMvc();
-            app.UseMvc(builder => {
+            app.UseMvc(async builder => {
 
                 builder
                     .Count()
@@ -169,7 +169,7 @@ namespace SimplePMServices
                     .Select()
                     ;
 
-                seedData.SeedAminUser();
+                await seedData.SeedAminUser();
 
                 var edmModel = app.ApplicationServices.GetRequiredService<SimplePMModelBuilder>().GetEdmModel();
                 builder.MapODataServiceRoute("ODataRoute", null, edmModel);
