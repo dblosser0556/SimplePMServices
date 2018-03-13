@@ -13,9 +13,10 @@ using System;
 namespace SimplePMServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20180312210556_project udpate")]
+    partial class projectudpate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -383,8 +384,6 @@ namespace SimplePMServices.Migrations
 
                     b.Property<int>("GroupId");
 
-                    b.Property<bool>("IsTemplate");
-
                     b.Property<DateTime>("PlannedStartDate");
 
                     b.Property<string>("ProjectDesc");
@@ -396,6 +395,8 @@ namespace SimplePMServices.Migrations
                         .HasMaxLength(50);
 
                     b.Property<int>("StatusId");
+
+                    b.Property<bool>("isTemplate");
 
                     b.HasKey("ProjectId");
 

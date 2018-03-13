@@ -18,6 +18,7 @@ namespace SimplePMServices.Models.Entities
     {
         
         public int ProjectId { get; set; }
+        public bool IsTemplate { get; set; }
         [Required]
         [StringLength(50)]
         public string ProjectName { get; set; }

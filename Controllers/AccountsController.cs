@@ -158,11 +158,20 @@ namespace SimplePMServices.Controllers
 
         // GET: api/accounts/users
         [HttpGet(template: "users")]
-        public async Task<IEnumerable<AppUser>> GetUsers()
+        public async Task<IEnumerable<LoggedInUser>> GetUsers()
         {
 
             List<AppUser> appUsers = await _appDbContext.AppUsers.ToListAsync();
-            return appUsers;
+
+            List<LoggedInUser> loggedInUsers = new List<LoggedInUser>();
+
+            foreach (AppUser appUser in appUsers)
+            {
+                LoggedInUser loggedInUser = new LoggedInUser();
+                loggedInUser = await GetLoggedInUser(appUser.UserName);
+                loggedInUsers.Add(loggedInUser);
+            }
+            return loggedInUsers;
         }
 
         // GET: api/accounts/roles
@@ -178,6 +187,25 @@ namespace SimplePMServices.Controllers
 
             return _roles;
         }
+
+        // GET: api/accounts/roles
+        [HttpGet(template: "role/{roleName}")]
+        public async Task<IEnumerable<LoggedInUser>> GetUserByRole(string roleName)
+        {
+
+            IList<AppUser> appUsers = await _userManager.GetUsersInRoleAsync(roleName);
+
+            List<LoggedInUser> loggedInUsers = new List<LoggedInUser>();
+
+            foreach (AppUser appUser in appUsers)
+            {
+                LoggedInUser loggedInUser = new LoggedInUser();
+                loggedInUser = await GetLoggedInUser(appUser.UserName);
+                loggedInUsers.Add(loggedInUser);
+            }
+            return loggedInUsers;
+        }
+
 
 
         [HttpGet(template: "user/{userName}")]

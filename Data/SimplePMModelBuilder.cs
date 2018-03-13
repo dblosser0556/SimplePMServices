@@ -14,7 +14,7 @@ namespace SimplePMServices.Data
             : base(serviceProvider)
         {
             EntitySet<Phase>(nameof(ApplicationDbContext.Phases));
-            EntitySet<Code>(nameof(ApplicationDbContext.Codes));
+            EntitySet<Project>(nameof(ApplicationDbContext.Projects));
         }
     }
 }

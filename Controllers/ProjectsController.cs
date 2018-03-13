@@ -37,11 +37,14 @@ namespace SimplePMServices.Controllers
             var query = from p in _context.Projects
                         join s in _context.Status on p.StatusId equals s.StatusId
                         join g in _context.Groups on p.GroupId equals g.GroupId
+                        join u in _context.AppUsers on p.ProjectManager equals u.Id
                         select new
                         {
                             ProjectId = p.ProjectId,
+                            IsTemplate = p.IsTemplate,
                             ProjectName = p.ProjectName,
                             ProjectDesc = p.ProjectDesc,
+                            ProjectManagerName = u.LastName + ", " + u.FirstName,
                             ProjectManager = p.ProjectManager,
                             PlannedStartDate = p.PlannedStartDate.ToString("yyyy-MM-dd"),
                             ActualStartDate = p.ActualStartDate.HasValue ? p.ActualStartDate.Value.ToString("yyyy-MM-dd"): string.Empty,
@@ -50,24 +53,54 @@ namespace SimplePMServices.Controllers
                             GroupManager = g.GroupManager,
                             StatusId = s.StatusId,
                             StatusName = s.StatusName
+       
                             
                         };
 
+
             foreach (var item in query)
             {
+
+                ICollection<Month> months = _context.Projects.Where(p => p.ProjectId == item.ProjectId)
+                         .SelectMany(p => p.Months).ToList();
+
+               
+                var totalPlannedExpense = months.Sum(m => m.TotalPlannedExpense);
+                var totalActualExpense = months.Sum(m => m.TotalActualExpense);
+                var totalPlannedCapital = months.Sum(m => m.TotalPlannedCapital);
+                var totalActualCapital = months.Sum(m => m.TotalActualCapital);
+                
+
+                ICollection<Budget> budgets = _context.Projects.Where(p => p.ProjectId == item.ProjectId)
+                    .SelectMany(p => p.Budgets).ToList();
+                
+                var totalCapitalBudget = budgets.Where(b => b.BudgetType == BudgetType.Capital)
+                    .Sum(b => b.Amount);
+                var totalExpenseBudget = budgets.Where(b => b.BudgetType == BudgetType.Expense)
+                    .Sum(b => b.Amount);
+                
+
                 var project = new ProjectList
                 {
                     ProjectId = item.ProjectId,
+                    IsTemplate = item.IsTemplate,
                     ProjectName = item.ProjectName,
                     ProjectDesc = item.ProjectDesc,
                     ProjectManager = item.ProjectManager,
+                    ProjectManagerName = item.ProjectManagerName,
                     PlannedStartDate = item.PlannedStartDate,
                     ActualStartDate = item.ActualStartDate,
                     GroupId = item.GroupId,
                     StatusId = item.StatusId,
                     GroupName = item.GroupName,
                     GroupManager = item.GroupManager,
-                    StatusName = item.StatusName
+                    StatusName = item.StatusName,
+                    TotalPlannedExpense = totalPlannedExpense,
+                    TotalActualExpense = totalActualExpense,
+                    TotalActualCapital = totalActualCapital,
+                    TotalPlannedCapital = totalPlannedCapital,
+                    TotalCapitalBudget = totalCapitalBudget,
+                    TotalExpenseBudget = totalExpenseBudget
                 };
                 projects.Add(project);
             }
@@ -146,8 +179,10 @@ namespace SimplePMServices.Controllers
                 //Update and Insert resources
                 foreach (var resource in project.Resources)
                 {
+                    //check to see if the resource already exists.
+                    //new resources have a resourceId of -1
                     var existingResource = existingProject.Resources
-                        .Where(r => r.ResourceId == resource.ResourceId)
+                        .Where(r => r.ResourceId == resource.ResourceId  && resource.ResourceId > 0)
                         .SingleOrDefault();
                     if (existingResource != null)
                     {
@@ -212,7 +247,7 @@ namespace SimplePMServices.Controllers
                 foreach (var month in project.Months)
                 {
                     var existingMonth = existingProject.Months
-                        .Where(r => r.MonthId == month.MonthId)
+                        .Where(r => r.MonthId == month.MonthId  && month.MonthId > 0)
                         .SingleOrDefault();
                     if (existingMonth != null)
                     {
@@ -239,7 +274,7 @@ namespace SimplePMServices.Controllers
                     }
                 }
 
-                //Find Deleted Months
+                //Find Deleted fixed costs
                 foreach (var existingCost in existingProject.FixedPriceCosts.ToList())
                 {
                     if (!project.FixedPriceCosts.Any(r => r.FixedPriceId == existingCost.FixedPriceId))
@@ -262,7 +297,7 @@ namespace SimplePMServices.Controllers
                         foreach (var fixedMonth in cost.FixedPriceMonths)
                         {
                             var existingFixedMonth = existingCost.FixedPriceMonths
-                                .Where(r => r.FixedPriceMonthId == fixedMonth.FixedPriceMonthId)
+                                .Where(r => r.FixedPriceMonthId == fixedMonth.FixedPriceMonthId  && fixedMonth.FixedPriceMonthId > 0)
                                 .SingleOrDefault();
 
                             //work through the set of resource months and update or add.
@@ -281,7 +316,7 @@ namespace SimplePMServices.Controllers
                     }
                     else
                     {
-                        // add resource
+                        // add fixed price record
                         var newFixedPrice = new FixedPrice
                         {
 
