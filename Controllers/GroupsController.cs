@@ -61,12 +61,15 @@ namespace SimplePMServices.Controllers
             {
                 return BadRequest();
             }
-
+            
             _context.Entry(group).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
+                await RebuildHierarchyOrder();
+
+
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -92,10 +95,11 @@ namespace SimplePMServices.Controllers
                 return BadRequest(ModelState);
             }
 
+            
             _context.Groups.Add(group);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
 
-            await UpdateHierarchy();
+            await RebuildHierarchyOrder();
 
             return CreatedAtAction("GetGroup", new { id = group.GroupId }, group);
         }
@@ -126,86 +130,76 @@ namespace SimplePMServices.Controllers
             return _context.Groups.Any(e => e.GroupId == id);
         }
 
-        //update the hierachy each time an entry is made to the groups table.
-        private async Task<ActionResult> UpdateHierarchy()
+        
+
+        private async Task<ActionResult> RebuildHierarchyOrder()
         {
-            List<Group> groups = await GetHierarchyOrder();
-            for (int i = 0; i < groups.Count; i++)
-            {
-                _context.Entry(groups[i]).State = EntityState.Modified;
-            }
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                    throw;
-            }
+                List<Group> groups = new List<Group>();
 
-            return NoContent();
-        }
+                // get an updated list of the hierarchy order by hierarchy.
+                var sql = "With GroupList AS " +
+                    "(SELECT Parent.GroupId, Parent.ParentId, Parent.LevelDesc, Parent.LevelId, Parent.Lft, " +
+                    "Parent.Rgt, Parent.GroupName, Parent.GroupDesc, Parent.GroupManager, 1 as Level " +
+                    "FROM Groups AS Parent " +
+                    "WHERE Parent.ParentId is NULL OR Parent.ParentId = 0 " +
+                    "UNION ALL " +
+                    "SELECT Child.GroupId, Child.ParentId, Child.LevelDesc, Child.LevelId, Child.Lft, " +
+                    "Child.Rgt, Child.GroupName, Child.GroupDesc, Child.GroupManager, GL.Level + 1 " +
+                    "FROM Groups AS Child " +
+                    "INNER JOIN GroupList AS GL " +
+                    "ON Child.ParentId = GL.GroupId " +
+                    "WHERE Child.ParentId is NOT NULL or Child.ParentId > 0) " +
+                    "SELECT * FROM GroupList";
 
-        private async Task<List<Group>> GetHierarchyOrder()
-        {
-            List<Group> groups = new List<Group>();
 
-            //get an updated list of the hierarchy order by hierarchy.
-            var sql = "With GroupList AS" +
-                "(SELECT Parent.GroupId, Parent.GroupName, Parent.GroupDesc, Parent.ParentId, Parent.LevelDesc, 1 as Level " +
-                "FROM group AS Parent " +
-                "WHERE Parent.ParentId is NULL " +
-                "UNION ALL " +
-                "SELECT Child.GroupId, Child.GroupName, Child.GroupDesc, Child.ParentId, Child.LevelDesc, GL.Level + 1 " +
-                "FROM group AS Child " +
-                "INNER JOIN GroupList AS GL " +
-                "ON Child.ParentId = GL.GroupId " +
-                "WHERE Child.ParentId is NULL)" +
-                "SELECT * FROM GroupList";
 
-            var results = await _context.Groups.FromSql(sql).ToListAsync();
+     
 
-            foreach( var item in results)
-            {
-                var group = new Group();
-
-                group.GroupId = item.GroupId;
-                group.ParentId = item.ParentId;
-                group.GroupManager = item.GroupManager;
-                group.Level = item.Level;
-                group.LevelDesc = item.LevelDesc;
-                groups.Add(group);
-            }
-
-            // calculate left and right values
-            int counter = 1;
-            for (int i = 0; i < groups.Count; i++)
-            {
-              
-                    Group _group = new Group();
-                    _group = ChildCount(groups[i], groups, counter);
-                    counter = (int)_group.Right + 1;
-                    groups[i].Left = _group.Left;
-                    groups[i].Right = _group.Right;
+                var results = await _context.Groups.FromSql(sql).ToListAsync();
                 
+                int right = 1;
+                foreach (var item in results)
+                {
+                    int left = right;
+                    if (item.Level == 1)
+                    {
+                        right = await RebuildTree(item, left);
+                    }
+                  
+                }
+                return Ok();
+                //return groups;
             }
-            return groups;
+            catch (Exception e)
+            {
+                Console.Write(e.Message);
+                return null;
+            }
         }
 
-        private Group ChildCount(Group group, List<Group> groups, int counter )
-        {
 
-            group.Left = counter++;
-            foreach (Group _group in groups )
+        //count the children 
+        private async Task<int> RebuildTree(Group group, int left)
+        {
+            int right = left + 1;
+            int level = group.Level;
+            var results = await _context.Groups.FromSql(
+                "Select * from groups WHERE ParentId={0}", group.GroupId).ToListAsync();
+
+            // go through and get all children
+            foreach (Group item in results)
             {
-                if (_group.ParentId == group.GroupId)
-                {
-                    counter++;
-                    group = ChildCount(_group, groups, counter);
-                }
+                right = await RebuildTree(item, right);
             }
-            group.Right = ++counter;
-            return group;
+            _context.Attach(group);
+            group.Lft = left;
+            group.Rgt = right;
+            group.Level = level;
+            await _context.SaveChangesAsync();
+
+            return right + 1;
         }
     }
 }

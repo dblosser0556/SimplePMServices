@@ -23,8 +23,8 @@ namespace SimplePMServices.Models.Entities
         // this indicates the position in the hierarchy.  
         // these are calculated fields.
         public int? LevelId { get; set; }
-        public int? Left { get; set; }
-        public int? Right { get; set; }
+        public int? Lft { get; set; }
+        public int? Rgt { get; set; }
         [Required]
         [StringLength(50)]
         public string GroupName { get; set; }
