@@ -38,6 +38,7 @@ namespace SimplePMServices.Controllers
                         join s in _context.Status on p.StatusId equals s.StatusId
                         join g in _context.Groups on p.GroupId equals g.GroupId
                         join u in _context.AppUsers on p.ProjectManager equals u.Id
+
                         select new
                         {
                             ProjectId = p.ProjectId,
@@ -120,6 +121,7 @@ namespace SimplePMServices.Controllers
             {
                 //var project = await _context.Projects.SingleOrDefaultAsync(m => m.ProjectId == id);
                 var project = await _context.Projects
+                                            .Include(p => p.Budgets)
                                             .Include(p => p.Resources)
                                                 .ThenInclude(pr => pr.ResourceMonths)
                                             .Include(p => p.Months)
