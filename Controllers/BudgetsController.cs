@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNet.OData;
 using SimplePMServices.Data;
 using SimplePMServices.Models.Entities;
 
@@ -22,10 +23,11 @@ namespace SimplePMServices.Controllers
         }
 
         // GET: api/Budgets
+        [EnableQuery]
         [HttpGet]
-        public IEnumerable<Budget> GetBudgets()
+        public IQueryable<Budget> GetBudgets()
         {
-            return _context.Budgets;
+            return _context.Budgets.AsQueryable();
         }
 
         // GET: api/Budgets/5

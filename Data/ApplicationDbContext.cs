@@ -34,6 +34,7 @@ namespace SimplePMServices.Data
         public DbSet<FixedPriceType> FixedPriceTypes { get; set; }
 
         public DbSet<Group> Groups { get; set; }
+        public DbSet<GroupBudget> GroupBudgets { get; set; }
 
         public DbSet<Month> Months { get; set; }
 
