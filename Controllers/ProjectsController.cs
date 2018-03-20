@@ -119,7 +119,8 @@ namespace SimplePMServices.Controllers
             }
             try
             {
-                //var project = await _context.Projects.SingleOrDefaultAsync(m => m.ProjectId == id);
+
+                
                 var project = await _context.Projects
                                             .Include(p => p.Budgets)
                                             .Include(p => p.Resources)
@@ -128,12 +129,64 @@ namespace SimplePMServices.Controllers
                                             .Include(p => p.FixedPriceCosts)
                                                 .ThenInclude(fp => fp.FixedPriceMonths)
                                             .Where(p => p.ProjectId == id)
-                                            .ToListAsync();
+                                               .ToListAsync();  
+                foreach (var p in project)
+                {
+                    p.Months = p.Months.OrderBy(m => m.MonthNo).ToList();
+                    p.Budgets = p.Budgets.OrderBy(b => b.ApprovedDateTime).ToList();
+                    foreach (var resource in p.Resources)
+                    {
+                        resource.ResourceMonths = resource.ResourceMonths.OrderBy(rm => rm.MonthNo).ToList();
+                    }
+                    foreach (var f in p.FixedPriceCosts) {
+                        f.FixedPriceMonths = f.FixedPriceMonths.OrderBy(fm => fm.MonthNo).ToList();
+                    }
+                }
+                /*
+                var project = await _context.Projects.Where(p => p.ProjectId == id).FirstOrDefaultAsync();
+                var entry = _context.Entry(project);
+                entry.Collection(e => e.Months)
+                    .Query()
+                    .OrderBy(m => m.MonthNo)
+                    .Load();
+                entry.Collection(e => e.Resources)
+                    .Query().Include(r => r.ResourceMonths)
+                    .Load();
+                entry.Collection(e => e.FixedPriceCosts)
+                    .Query().Include(f => f.FixedPriceMonths)
+                    .Load(); */
+            
+                /*var project =   _context.Projects
+                    .Where(p => p.ProjectId == id)
+                    .Select(p => new
+                    {
+                        Project = p,
+                        Months = p.Months.OrderBy(m => m.MonthNo),
+                        Resources = p.Resources
+                           .Select(r => new
+                           {
+                               Resource = r,
+                               ResourceMonth = r.ResourceMonths.OrderBy(rm => rm.MonthNo)
+                           }),
+                        FixedPriceCosts = p.FixedPriceCosts
+                           .Select(f => new
+                           {
+                               FixedPrice = f,
+                               FixedPriceMonth = f.FixedPriceMonths.OrderBy(fp => fp.MonthNo)
+                           }),
+                        Budgets = p.Budgets.OrderBy(b => b.ApprovedDateTime)
+                       .ToList()
+                    }).ToList(); */
+                  
+                
+
                 if (project == null)
                 {
                     return NotFound();
                 }
 
+              
+               
                 return Ok(project);
             }
             catch(Exception e)
@@ -157,6 +210,10 @@ namespace SimplePMServices.Controllers
             {
                 return BadRequest();
             }
+            return await UpdateProject(id, project);
+        }
+
+        private async Task<IActionResult> UpdateProject(int id, Project project) { 
 
             var existingProject = _context.Projects.Include(p => p.Resources)
                                                 .ThenInclude(pr => pr.ResourceMonths)
@@ -384,8 +441,12 @@ namespace SimplePMServices.Controllers
 
             try
             {
+                //this add the project header information
                 _context.Projects.Add(project);
                 await _context.SaveChangesAsync();
+
+                //now add the monthly details.
+                //await UpdateProject(project.ProjectId, project);
 
                 return CreatedAtAction("GetProject", new { id = project.ProjectId }, project);
             }

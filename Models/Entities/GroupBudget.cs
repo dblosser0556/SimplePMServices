@@ -14,6 +14,7 @@ namespace SimplePMServices.Models.Entities
         [Required]
         public DateTime ApprovedDateTime { get; set; }
         public double Amount { get; set; }
+        public int BudgetYear { get; set; }
 
         public int GroupId { get; set; }
     }
