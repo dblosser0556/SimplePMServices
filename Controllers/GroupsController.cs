@@ -26,7 +26,17 @@ namespace SimplePMServices.Controllers
         [HttpGet]
         public IEnumerable<Group> GetGroups()
         {
-            return _context.Groups;
+            var groups = _context.Groups
+                               .Include(g => g.GroupBudgets)
+                               .OrderBy(g => g.Lft)
+                               .ToList();
+
+            foreach (var g in groups)
+            {
+                g.GroupBudgets = g.GroupBudgets.OrderBy(gb => gb.BudgetYear).ToList();
+            }
+
+            return groups;
         }
 
         // GET: api/Groups/5
@@ -165,7 +175,7 @@ namespace SimplePMServices.Controllers
                     int left = right;
                     if (item.Level == 1)
                     {
-                        right = await RebuildTree(item, left);
+                        right = await RebuildTree(item, left, 1);
                     }
                   
                 }
@@ -181,17 +191,17 @@ namespace SimplePMServices.Controllers
 
 
         //count the children 
-        private async Task<int> RebuildTree(Group group, int left)
+        private async Task<int> RebuildTree(Group group, int left, int level)
         {
             int right = left + 1;
-            int level = group.Level;
+            
             var results = await _context.Groups.FromSql(
                 "Select * from groups WHERE ParentId={0}", group.GroupId).ToListAsync();
 
             // go through and get all children
             foreach (Group item in results)
             {
-                right = await RebuildTree(item, right);
+                right = await RebuildTree(item, right, level + 1);
             }
             _context.Attach(group);
             group.Lft = left;

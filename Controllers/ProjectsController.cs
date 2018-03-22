@@ -129,7 +129,10 @@ namespace SimplePMServices.Controllers
                                             .Include(p => p.FixedPriceCosts)
                                                 .ThenInclude(fp => fp.FixedPriceMonths)
                                             .Where(p => p.ProjectId == id)
-                                               .ToListAsync();  
+                                               .ToListAsync();
+                // the default sorting order is the id 
+                // but we need the items to be sorted by month no so the item line up
+                // in the grid.
                 foreach (var p in project)
                 {
                     p.Months = p.Months.OrderBy(m => m.MonthNo).ToList();

@@ -32,7 +32,7 @@ namespace SimplePMServices.Models.Entities
         public string GroupManager { get; set; }
 
         
-        public virtual ICollection<Budget> GroupBudgets { get; set; }
+        public virtual ICollection<GroupBudget> GroupBudgets { get; set; }
 
     }
 }
