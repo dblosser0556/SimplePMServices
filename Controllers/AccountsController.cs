@@ -46,16 +46,15 @@ namespace SimplePMServices.Controllers
                 userIdentity.FirstName = model.CurrentUser.FirstName;
                 userIdentity.LastName = model.CurrentUser.LastName;
                 userIdentity.UserName = model.CurrentUser.UserName;
+                userIdentity.NormalizedEmail = model.CurrentUser.email.ToUpper();
+                userIdentity.NormalizedUserName = model.CurrentUser.UserName.ToUpper();
 
 
-                //var result = await _userManager.CreateAsync(userIdentity, model.CurrentUser.password);
-
-                var userStore = new UserStore<AppUser>(_appDbContext);
-                var result = await userStore.CreateAsync(userIdentity);
-               
+                var result = await _userManager.CreateAsync(userIdentity, model.CurrentUser.password);               
 
                 if (!result.Succeeded) return new BadRequestObjectResult(Errors.AddErrorsToModelState(result, ModelState));
-
+                var userStore = new UserStore<AppUser>(_appDbContext);
+                userIdentity = await userStore.FindByNameAsync(userIdentity.UserName);
 
                 foreach (UserRole role in model.Roles)
                 {
@@ -79,81 +78,92 @@ namespace SimplePMServices.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update([FromRoute] string id, [FromBody]LoggedInUser item)
         {
-            if (item == null)
+            try
             {
-                return BadRequest();
+                if (item == null)
+                {
+                    return BadRequest();
+                }
+
+                var user = await _appDbContext.AppUsers.FirstOrDefaultAsync(p => p.Id == id);
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                user.LastName = item.CurrentUser.LastName;
+                user.FirstName = item.CurrentUser.FirstName;
+                user.Email = item.CurrentUser.email;
+                user.UserName = item.CurrentUser.UserName;
+                user.NormalizedEmail = item.CurrentUser.email.ToUpper();
+                user.NormalizedUserName = item.CurrentUser.UserName.ToUpper();
+
+
+                if (user.PasswordHash != item.CurrentUser.password)
+                {
+                    var password = new PasswordHasher<AppUser>();
+                    var hashed = password.HashPassword(user, item.CurrentUser.password);
+                    user.PasswordHash = hashed;
+                }
+
+
+                // remove any roles that have been removed from the user.
+                IList<string> userCurRoles = await _userManager.GetRolesAsync(user);
+                if (userCurRoles != null)
+                {
+                    foreach (string userCurRole in userCurRoles)
+                    {
+                        if (!item.Roles.Any(r => r.RoleName == userCurRole && r.Selected))
+                        {
+                            await _userManager.RemoveFromRoleAsync(user, userCurRole);
+                        }
+                    }
+                }
+
+                // update the roles that where assigned passed to the user.
+                if (item.Roles != null)
+                {
+                    //add the user roles
+                    foreach (var role in item.Roles)
+                    {
+                        if (role.Selected)
+                        {
+                            if (!userCurRoles.Any(r => r == role.RoleName))
+                                await _userManager.AddToRoleAsync(user, role.RoleName);
+                        }
+                    }
+                }
+
+                //save the changes.
+                _appDbContext.AppUsers.Update(user);
+
+                // work on roles
+                int count = await _appDbContext.SaveChangesAsync();
+                return new OkObjectResult("User updated");
+            } catch (Exception e)
+            {
+                Console.Write(e.Message);
+                return BadRequest(e.Message);
             }
 
-            var user = await _appDbContext.AppUsers.FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        // DELETE api/values/5
+        [HttpDelete("{userName}")]
+
+        public async Task<IActionResult> Delete(string userName)
+        {
+            var user = await _appDbContext.AppUsers.FirstOrDefaultAsync(u => u.UserName == userName);
+           
             if (user == null)
             {
                 return NotFound();
             }
 
-            user.LastName = item.CurrentUser.LastName;
-            user.FirstName = item.CurrentUser.FirstName;
-            user.Email = item.CurrentUser.email;
-            user.UserName = item.CurrentUser.UserName;
-            
-            if (user.PasswordHash != item.CurrentUser.password)
-            {
-                var password = new PasswordHasher<AppUser>();
-                var hashed = password.HashPassword(user, item.CurrentUser.password);
-                user.PasswordHash = hashed;
-            }
-
-
-            // remove any roles that have been removed from the user.
-            IList<string> userCurRoles = await _userManager.GetRolesAsync(user);
-            if (userCurRoles != null)
-            {
-                foreach (string userCurRole in userCurRoles)
-                {
-                    if (!item.Roles.Any(r => r.RoleName == userCurRole  && r.Selected))
-                    {
-                        await _userManager.RemoveFromRoleAsync(user, userCurRole);
-                    }
-                }   
-            }
-
-            // update the roles that where assigned passed to the user.
-            if (item.Roles != null )
-            {
-                //add the user roles
-                foreach (var role in item.Roles)
-                {
-                    if (role.Selected)
-                    {
-                        if (!userCurRoles.Any(r => r == role.RoleName))
-                            await _userManager.AddToRoleAsync(user, role.RoleName);
-                    }
-                }
-            }
-
-            //save the changes.
-            _appDbContext.AppUsers.Update(user);
-
-            // work on roles
-            int count = await _appDbContext.SaveChangesAsync();
-            return new OkObjectResult("User updated");
-
-        }
-
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-
-        public IActionResult Delete(long id)
-        {
-            var phase = _appDbContext.Phases.FirstOrDefault(p => p.PhaseId == id);
-            if (phase == null)
-            {
-                return NotFound();
-            }
-
-            _appDbContext.Phases.Remove(phase);
+            _appDbContext.AppUsers.Remove(user);
             _appDbContext.SaveChanges();
 
-            return new OkObjectResult("Phase deleted");
+            return new OkObjectResult("User deleted");
         }
 
         // GET: api/accounts/users

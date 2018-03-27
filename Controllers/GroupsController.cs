@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -23,20 +24,13 @@ namespace SimplePMServices.Controllers
         }
 
         // GET: api/Groups
+        [EnableQuery]
         [HttpGet]
         public IEnumerable<Group> GetGroups()
         {
-            var groups = _context.Groups
-                               .Include(g => g.GroupBudgets)
-                               .OrderBy(g => g.Lft)
-                               .ToList();
 
-            foreach (var g in groups)
-            {
-                g.GroupBudgets = g.GroupBudgets.OrderBy(gb => gb.BudgetYear).ToList();
-            }
 
-            return groups;
+            return _context.Groups.AsQueryable();
         }
 
         // GET: api/Groups/5
@@ -47,8 +41,15 @@ namespace SimplePMServices.Controllers
             {
                 return BadRequest(ModelState);
             }
+            var group =  await _context.Groups
+                              .Include(g => g.GroupBudgets)
+                              .OrderBy(g => g.Lft)
+                              .SingleOrDefaultAsync(g => g.GroupId == id);
+                        
 
-            var group = await _context.Groups.SingleOrDefaultAsync(m => m.GroupId == id);
+            
+            group.GroupBudgets = group.GroupBudgets.OrderBy(gb => gb.BudgetYear).ToList();
+            
 
             if (group == null)
             {
