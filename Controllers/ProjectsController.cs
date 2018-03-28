@@ -223,6 +223,7 @@ namespace SimplePMServices.Controllers
                                             .Include(p => p.Months)
                                             .Include(p => p.FixedPriceCosts)
                                                 .ThenInclude(fp => fp.FixedPriceMonths)
+                                            .Include(p => p.Budgets)
                                             .Where(p => p.ProjectId == id)
                                             .SingleOrDefault();
             if (existingProject != null)
@@ -297,6 +298,42 @@ namespace SimplePMServices.Controllers
 
                     }
                 }
+
+                //Find Deleted Budgets
+                foreach (var existingBudget in existingProject.Budgets.ToList())
+                {
+                    if (!project.Budgets.Any(r => r.BudgetId == existingBudget.BudgetId))
+                        _context.Budgets.Remove(existingBudget);
+                }
+
+                //Update and insert Budgets
+                foreach (var budget in project.Budgets)
+                {
+                    // update existing budget entries  
+                    // new budgets have an id of -1
+                    var existingBudget = existingProject.Budgets
+                        .Where(r => r.BudgetId == budget.BudgetId && budget.BudgetId > 0)
+                        .SingleOrDefault();
+                    if (existingBudget != null)
+                    {
+                        //update resource
+                        _context.Entry(existingBudget).CurrentValues.SetValues(budget);
+
+                    }
+                    else
+                    {
+                        // add budget
+                        var newBudget = new Budget
+                        {
+                            Amount = budget.Amount,
+                            ApprovedDateTime = budget.ApprovedDateTime,
+                            BudgetType = budget.BudgetType
+                        };
+                        existingProject.Budgets.Add(newBudget);
+
+                    }
+                }
+
 
                 //Find Deleted Months
                 foreach (var existingMonth in existingProject.Months.ToList())

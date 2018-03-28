@@ -64,25 +64,20 @@ namespace SimplePMServices.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutGroup([FromRoute] int id, [FromBody] Group group)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != group.GroupId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(group).State = EntityState.Modified;
-
             try
             {
-                _context.SaveChanges();
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (id != group.GroupId)
+                {
+                    return BadRequest();
+                }
+
                 await UpdateBudgets(id, group);
                 await RebuildHierarchyOrder();
-
-
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -92,7 +87,8 @@ namespace SimplePMServices.Controllers
                 }
                 else
                 {
-                    throw;
+                    return BadRequest();
+           
                 }
             }
 
@@ -103,20 +99,27 @@ namespace SimplePMServices.Controllers
         [HttpPost]
         public async Task<IActionResult> PostGroup([FromBody] Group group)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                // can't pass a null but can't add a value
+                _context.Groups.Add(group);
+                _context.SaveChanges();
+
+                await UpdateBudgets(group.GroupId, group);
+
+                await RebuildHierarchyOrder();
+
+                return CreatedAtAction("GetGroup", new { id = group.GroupId }, group);
+            } catch (Exception e)
+            {
+                Console.Write(e.Message, e.InnerException);
+                return BadRequest();
             }
-
-
-            _context.Groups.Add(group);
-            _context.SaveChanges();
-
-            await UpdateBudgets(group.GroupId, group);
-
-            await RebuildHierarchyOrder();
-
-            return CreatedAtAction("GetGroup", new { id = group.GroupId }, group);
         }
 
         // DELETE: api/Groups/5
@@ -147,56 +150,61 @@ namespace SimplePMServices.Controllers
 
         private async Task<IActionResult> UpdateBudgets(int id, Group group) {
 
+
+
             var existingGroup = await _context.Groups
                                          .Include(g => g.GroupBudgets)
-                                         .OrderBy(g => g.Lft)
-                                         .SingleOrDefaultAsync(g => g.GroupId == id);
+                                         .Where(g => g.GroupId == id)
+                                         .SingleOrDefaultAsync();
 
             if (existingGroup != null)
             {
-                _context.Entry(existingGroup).CurrentValues.SetValues(group);
 
-                //Find Deleted Resources
-                if (existingGroup.GroupBudgets != null)
-                {
-                    foreach (var existingBudget in existingGroup.GroupBudgets.ToList())
-                    {
-                        if (!group.GroupBudgets.Any(r => r.GroupBudgetId == existingBudget.GroupBudgetId))
-                            _context.GroupBudgets.Remove(existingBudget);
-                    }
-                }
-                //Update and Insert resources
-                foreach (var budget in group.GroupBudgets)
-                {
-                    //check to see if the resource already exists.
-                    //new resources have a resourceId of -1
-                    var existingBudget = existingGroup.GroupBudgets
-                        .Where(gb => gb.GroupBudgetId == budget.GroupBudgetId && budget.GroupBudgetId > 0)
-                        .SingleOrDefault();
-                    if (existingBudget != null)
-                    {
-                        //update budget
-                        _context.Entry(existingBudget).CurrentValues.SetValues(budget);
-                    }  else
-                    {
-                        //add the group budget
-                        // add resource
-                        var newBudget = new GroupBudget
-                        {
-                            Amount = budget.Amount,
-                            ApprovedDateTime = budget.ApprovedDateTime,
-                            BudgetType = budget.BudgetType,
-                            BudgetYear = budget.BudgetYear,
-                            GroupId = budget.GroupId
-                        };
-
-                        //add the resource months
-                      
-                        existingGroup.GroupBudgets.Add(newBudget);
-                    }
-                }
                 try
                 {
+                    _context.Entry(existingGroup).CurrentValues.SetValues(group);
+
+                    //Find Deleted Resources
+                    if (existingGroup.GroupBudgets != null)
+                    {
+                        foreach (var existingBudget in existingGroup.GroupBudgets.ToList())
+                        {
+                            if (!group.GroupBudgets.Any(r => r.GroupBudgetId == existingBudget.GroupBudgetId))
+                                _context.GroupBudgets.Remove(existingBudget);
+                        }
+                    }
+                    //Update and Insert resources
+                    foreach (var budget in group.GroupBudgets)
+                    {
+                        //check to see if the resource already exists.
+                        //new resources have a resourceId of -1
+                        var existingBudget = existingGroup.GroupBudgets
+                            .Where(gb => gb.GroupBudgetId == budget.GroupBudgetId && budget.GroupBudgetId > 0)
+                            .SingleOrDefault();
+                        if (existingBudget != null)
+                        {
+                            //update budget
+                            _context.Entry(existingBudget).CurrentValues.SetValues(budget);
+                        }
+                        else
+                        {
+                            //add the group budget
+                            // add resource
+                            var newBudget = new GroupBudget
+                            {
+                                Amount = budget.Amount,
+                                ApprovedDateTime = budget.ApprovedDateTime,
+                                BudgetType = budget.BudgetType,
+                                BudgetYear = budget.BudgetYear,
+                                GroupId = budget.GroupId
+                            };
+
+                            //add the resource months
+
+                            existingGroup.GroupBudgets.Add(newBudget);
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
                 }
                 catch (Exception e)
@@ -208,7 +216,7 @@ namespace SimplePMServices.Controllers
                     else
                     {
                         Debug.Write(e.InnerException);
-                        throw;
+                        return BadRequest();
                     }
                 }
 
