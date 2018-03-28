@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.OData;
@@ -41,15 +42,15 @@ namespace SimplePMServices.Controllers
             {
                 return BadRequest(ModelState);
             }
-            var group =  await _context.Groups
+            var group = await _context.Groups
                               .Include(g => g.GroupBudgets)
                               .OrderBy(g => g.Lft)
                               .SingleOrDefaultAsync(g => g.GroupId == id);
-                        
 
-            
+
+
             group.GroupBudgets = group.GroupBudgets.OrderBy(gb => gb.BudgetYear).ToList();
-            
+
 
             if (group == null)
             {
@@ -72,12 +73,13 @@ namespace SimplePMServices.Controllers
             {
                 return BadRequest();
             }
-            
+
             _context.Entry(group).State = EntityState.Modified;
 
             try
             {
                 _context.SaveChanges();
+                await UpdateBudgets(id, group);
                 await RebuildHierarchyOrder();
 
 
@@ -106,9 +108,11 @@ namespace SimplePMServices.Controllers
                 return BadRequest(ModelState);
             }
 
-            
+
             _context.Groups.Add(group);
             _context.SaveChanges();
+
+            await UpdateBudgets(group.GroupId, group);
 
             await RebuildHierarchyOrder();
 
@@ -141,6 +145,82 @@ namespace SimplePMServices.Controllers
             return _context.Groups.Any(e => e.GroupId == id);
         }
 
+        private async Task<IActionResult> UpdateBudgets(int id, Group group) {
+
+            var existingGroup = await _context.Groups
+                                         .Include(g => g.GroupBudgets)
+                                         .OrderBy(g => g.Lft)
+                                         .SingleOrDefaultAsync(g => g.GroupId == id);
+
+            if (existingGroup != null)
+            {
+                _context.Entry(existingGroup).CurrentValues.SetValues(group);
+
+                //Find Deleted Resources
+                if (existingGroup.GroupBudgets != null)
+                {
+                    foreach (var existingBudget in existingGroup.GroupBudgets.ToList())
+                    {
+                        if (!group.GroupBudgets.Any(r => r.GroupBudgetId == existingBudget.GroupBudgetId))
+                            _context.GroupBudgets.Remove(existingBudget);
+                    }
+                }
+                //Update and Insert resources
+                foreach (var budget in group.GroupBudgets)
+                {
+                    //check to see if the resource already exists.
+                    //new resources have a resourceId of -1
+                    var existingBudget = existingGroup.GroupBudgets
+                        .Where(gb => gb.GroupBudgetId == budget.GroupBudgetId && budget.GroupBudgetId > 0)
+                        .SingleOrDefault();
+                    if (existingBudget != null)
+                    {
+                        //update budget
+                        _context.Entry(existingBudget).CurrentValues.SetValues(budget);
+                    }  else
+                    {
+                        //add the group budget
+                        // add resource
+                        var newBudget = new GroupBudget
+                        {
+                            Amount = budget.Amount,
+                            ApprovedDateTime = budget.ApprovedDateTime,
+                            BudgetType = budget.BudgetType,
+                            BudgetYear = budget.BudgetYear,
+                            GroupId = budget.GroupId
+                        };
+
+                        //add the resource months
+                      
+                        existingGroup.GroupBudgets.Add(newBudget);
+                    }
+                }
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception e)
+                {
+                    if (!GroupExists(id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        Debug.Write(e.InnerException);
+                        throw;
+                    }
+                }
+
+                return NoContent();
+
+            }
+            else
+            {
+                return NotFound();
+            }
+
+        }
         
 
         private async Task<ActionResult> RebuildHierarchyOrder()
