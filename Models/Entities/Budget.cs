@@ -21,6 +21,8 @@ namespace SimplePMServices.Models.Entities
         public BudgetType BudgetType { get; set; }
         [Required]
         public DateTime ApprovedDateTime { get; set; }
+        public string AccountingIdentifier { get; set; }
+        public string Comments { get; set; }
         public double Amount { get; set; }
 
         public int ProjectId { get; set; }

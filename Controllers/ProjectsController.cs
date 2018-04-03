@@ -523,6 +523,7 @@ namespace SimplePMServices.Controllers
             return _context.Projects.Any(e => e.ProjectId == id);
         }
 
+        // Create new instance of resource month in order to add to database.
         private ResourceMonth GetResourceMonth (ResourceMonth month)
         {
             var newMonth = new ResourceMonth
@@ -530,22 +531,26 @@ namespace SimplePMServices.Controllers
                 ActualEffort = month.ActualEffort,
                 MonthNo = month.MonthNo,
                 ActualEffortCapPercent = month.ActualEffortCapPercent,
+                ActualEffortStyle = month.ActualEffortStyle,
                 PlannedEffort = month.PlannedEffort,
                 PlannedEffortCapPercent = month.PlannedEffortCapPercent,
-               
+                PlannedEffortStyle = month.PlannedEffortStyle
             };
             return newMonth;
         }
 
+        // Create new instance of FixedPriceMonth to be added to the database.
         private FixedPriceMonth GetFixedPriceMonth (FixedPriceMonth month)
         {
             var newMonth = new FixedPriceMonth
             {
                 ActualCost = month.ActualCost,
                 ActualCostCapPercent = month.ActualCostCapPercent,
+                ActualCostStyle = month.ActualCostStyle,
                 MonthNo = month.MonthNo,
                 PlannedCost = month.PlannedCost,
-                PlannedCostCapPercent = month.PlannedCostCapPercent
+                PlannedCostCapPercent = month.PlannedCostCapPercent,
+                PlannedCostStyle = month.PlannedCostStyle
             };
             return newMonth;
         } 

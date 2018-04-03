@@ -49,7 +49,11 @@ namespace SimplePMServices.Data
         public DbSet<Role> ProjectRoles { get; set; }        
         
         public DbSet<Status> Status { get; set; }
-        
+
+        public DbSet<Vendor> Vendors { get; set; }
+        public DbSet<VendorInvoice> Invoices { get; set; }
+        public DbSet<VendorPeriod> VendorPeriods { get; set; } 
+        public DbSet<Milestone> Milestones { get; set; }
         
         
         

@@ -37,7 +37,8 @@ namespace SimplePMServices.Models.Entities
         public virtual ICollection<Month> Months { get; set; }
         public virtual ICollection<Resource> Resources { get; set; }
         public virtual ICollection<FixedPrice> FixedPriceCosts { get; set; }
-
+        public virtual ICollection<Vendor> Vendors { get; set; }
+        public virtual ICollection<Milestone> Milestones { get; set; }
 
     }
 
