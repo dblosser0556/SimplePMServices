@@ -123,11 +123,14 @@ namespace SimplePMServices.Controllers
                 
                 var project = await _context.Projects
                                             .Include(p => p.Budgets)
+                                            .Include(p => p.Vendors)
+                                                .ThenInclude(v => v.Invoices)
                                             .Include(p => p.Resources)
                                                 .ThenInclude(pr => pr.ResourceMonths)
                                             .Include(p => p.Months)
                                             .Include(p => p.FixedPriceCosts)
                                                 .ThenInclude(fp => fp.FixedPriceMonths)
+                                            .Include(p => p.Milestones)
                                             .Where(p => p.ProjectId == id)
                                                .ToListAsync();
                 // the default sorting order is the id 
@@ -144,43 +147,9 @@ namespace SimplePMServices.Controllers
                     foreach (var f in p.FixedPriceCosts) {
                         f.FixedPriceMonths = f.FixedPriceMonths.OrderBy(fm => fm.MonthNo).ToList();
                     }
+
                 }
-                /*
-                var project = await _context.Projects.Where(p => p.ProjectId == id).FirstOrDefaultAsync();
-                var entry = _context.Entry(project);
-                entry.Collection(e => e.Months)
-                    .Query()
-                    .OrderBy(m => m.MonthNo)
-                    .Load();
-                entry.Collection(e => e.Resources)
-                    .Query().Include(r => r.ResourceMonths)
-                    .Load();
-                entry.Collection(e => e.FixedPriceCosts)
-                    .Query().Include(f => f.FixedPriceMonths)
-                    .Load(); */
-            
-                /*var project =   _context.Projects
-                    .Where(p => p.ProjectId == id)
-                    .Select(p => new
-                    {
-                        Project = p,
-                        Months = p.Months.OrderBy(m => m.MonthNo),
-                        Resources = p.Resources
-                           .Select(r => new
-                           {
-                               Resource = r,
-                               ResourceMonth = r.ResourceMonths.OrderBy(rm => rm.MonthNo)
-                           }),
-                        FixedPriceCosts = p.FixedPriceCosts
-                           .Select(f => new
-                           {
-                               FixedPrice = f,
-                               FixedPriceMonth = f.FixedPriceMonths.OrderBy(fp => fp.MonthNo)
-                           }),
-                        Budgets = p.Budgets.OrderBy(b => b.ApprovedDateTime)
-                       .ToList()
-                    }).ToList(); */
-                  
+               
                 
 
                 if (project == null)
