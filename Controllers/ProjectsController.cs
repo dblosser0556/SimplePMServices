@@ -189,10 +189,13 @@ namespace SimplePMServices.Controllers
 
             var existingProject = _context.Projects.Include(p => p.Resources)
                                                 .ThenInclude(pr => pr.ResourceMonths)
+                                             .Include(p => p.Vendors)
+                                                .ThenInclude(v => v.Invoices)
                                             .Include(p => p.Months)
                                             .Include(p => p.FixedPriceCosts)
                                                 .ThenInclude(fp => fp.FixedPriceMonths)
                                             .Include(p => p.Budgets)
+                                            .Include(p => p.Milestones)
                                             .Where(p => p.ProjectId == id)
                                             .SingleOrDefault();
             if (existingProject != null)
@@ -267,6 +270,78 @@ namespace SimplePMServices.Controllers
 
                     }
                 }
+
+                //find deleted vendors
+                foreach (var existingVendor in existingProject.Vendors.ToList())
+                {
+                    
+                        if (!project.Vendors.Any(v => v.VendorId == existingVendor.VendorId))
+                            _context.Vendors.Remove(existingVendor);
+                    
+                }
+
+                // Update and Insert vendors
+                foreach (var vendor in project.Vendors)
+                {
+                    //check to see if the Vendor already exists.
+                    //new vendors have a vendorId of -1
+                    var existingVendor = existingProject.Vendors
+                        .Where(r => r.VendorId == vendor.VendorId && vendor.VendorId > 0)
+                        .SingleOrDefault();
+                    if (existingVendor != null)
+                    {
+                        //update vendor
+                        _context.Entry(existingVendor).CurrentValues.SetValues(vendor);
+
+                        // update existing vendor invoices
+                        foreach (var vendorInvoice in vendor.Invoices)
+                        {
+                            var existingInvoice = existingVendor.Invoices
+                                .Where(r => r.VendorInvoiceId == vendorInvoice.VendorInvoiceId)
+                                .SingleOrDefault();
+
+                            //work through the set of vendor invoices and update or add.
+                            if (existingInvoice != null)
+                                _context.Entry(existingInvoice).CurrentValues.SetValues(vendorInvoice);
+                            else
+                            {
+                                var newMonth = GetInvoice(vendorInvoice);
+
+                                //ensure there are invoices for the existing vendor
+                                if (existingVendor.Invoices == null)
+                                    existingVendor.Invoices = new List<VendorInvoice>();
+                                existingVendor.Invoices.Add(newMonth);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // add vendor
+                        var newVendor = new Vendor
+                        {
+                            Contact = vendor.Contact,
+                            ContactEmail = vendor.ContactEmail,
+                            ContactPhone = vendor.ContactPhone,
+                            ContractAmount = vendor.ContractAmount,
+                            ContractEndDate = vendor.ContractEndDate,
+                            ContractIdentifier = vendor.ContractIdentifier,
+                            ContractTerms = vendor.ContractTerms,
+                            VendorName = vendor.VendorName                         
+                        };
+
+                        //add the vendor invoices
+                        newVendor.Invoices = new List<VendorInvoice>();
+                        foreach (var invoice in vendor.Invoices)
+                        {
+                            var newInvoice = GetInvoice(invoice);
+                            newVendor.Invoices.Add(newInvoice);
+                        }
+                        existingProject.Vendors.Add(newVendor);
+
+                    }
+                }
+
+
 
                 //Find Deleted Budgets
                 foreach (var existingBudget in existingProject.Budgets.ToList())
@@ -523,5 +598,16 @@ namespace SimplePMServices.Controllers
             };
             return newMonth;
         } 
+
+        private VendorInvoice GetInvoice (VendorInvoice invoice)
+        {
+            var newInvoice = new VendorInvoice
+            {
+                Amount = invoice.Amount,
+                Comments = invoice.Comments,
+                InvoiceDate = invoice.InvoiceDate
+            };
+            return newInvoice;
+        }
     }
 }

@@ -11,57 +11,57 @@ using SimplePMServices.Models.Entities;
 namespace SimplePMServices.Controllers
 {
     [Produces("application/json")]
-    [Route("api/Vendors")]
-    public class VendorsController : Controller
+    [Route("api/VendorInvoices")]
+    public class VendorInvoicesController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public VendorsController(ApplicationDbContext context)
+        public VendorInvoicesController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // GET: api/Vendors
+        // GET: api/VendorInvoices
         [HttpGet]
-        public IEnumerable<Vendor> GetVendors()
+        public IEnumerable<VendorInvoice> GetInvoices()
         {
-            return _context.Vendors;
+            return _context.Invoices;
         }
 
-        // GET: api/Vendors/5
+        // GET: api/VendorInvoices/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetVendor([FromRoute] int id)
+        public async Task<IActionResult> GetVendorInvoice([FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var vendor = await _context.Vendors.SingleOrDefaultAsync(m => m.VendorId == id);
+            var vendorInvoice = await _context.Invoices.SingleOrDefaultAsync(m => m.VendorInvoiceId == id);
 
-            if (vendor == null)
+            if (vendorInvoice == null)
             {
                 return NotFound();
             }
 
-            return Ok(vendor);
+            return Ok(vendorInvoice);
         }
 
-        // PUT: api/Vendors/5
+        // PUT: api/VendorInvoices/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutVendor([FromRoute] int id, [FromBody] Vendor vendor)
+        public async Task<IActionResult> PutVendorInvoice([FromRoute] int id, [FromBody] VendorInvoice vendorInvoice)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != vendor.VendorId)
+            if (id != vendorInvoice.VendorInvoiceId)
             {
                 return BadRequest();
             }
 
-            _context.Entry(vendor).State = EntityState.Modified;
+            _context.Entry(vendorInvoice).State = EntityState.Modified;
 
             try
             {
@@ -69,7 +69,7 @@ namespace SimplePMServices.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!VendorExists(id))
+                if (!VendorInvoiceExists(id))
                 {
                     return NotFound();
                 }
@@ -78,49 +78,48 @@ namespace SimplePMServices.Controllers
                     throw;
                 }
             }
-
-            return AcceptedAtAction("GetVendor", vendor);
+            return AcceptedAtAction("GetVendorInvoice", vendorInvoice);
         }
 
-        // POST: api/Vendors
+        // POST: api/VendorInvoices
         [HttpPost]
-        public async Task<IActionResult> PostVendor([FromBody] Vendor vendor)
+        public async Task<IActionResult> PostVendorInvoice([FromBody] VendorInvoice vendorInvoice)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            _context.Vendors.Add(vendor);
+            _context.Invoices.Add(vendorInvoice);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetVendor", new { id = vendor.VendorId }, vendor);
+            return CreatedAtAction("GetVendorInvoice", new { id = vendorInvoice.VendorInvoiceId }, vendorInvoice);
         }
 
-        // DELETE: api/Vendors/5
+        // DELETE: api/VendorInvoices/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteVendor([FromRoute] int id)
+        public async Task<IActionResult> DeleteVendorInvoice([FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var vendor = await _context.Vendors.SingleOrDefaultAsync(m => m.VendorId == id);
-            if (vendor == null)
+            var vendorInvoice = await _context.Invoices.SingleOrDefaultAsync(m => m.VendorInvoiceId == id);
+            if (vendorInvoice == null)
             {
                 return NotFound();
             }
 
-            _context.Vendors.Remove(vendor);
+            _context.Invoices.Remove(vendorInvoice);
             await _context.SaveChangesAsync();
 
-            return Ok(vendor);
+            return Ok(vendorInvoice);
         }
 
-        private bool VendorExists(int id)
+        private bool VendorInvoiceExists(int id)
         {
-            return _context.Vendors.Any(e => e.VendorId == id);
+            return _context.Invoices.Any(e => e.VendorInvoiceId == id);
         }
     }
 }
