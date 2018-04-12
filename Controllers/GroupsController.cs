@@ -30,8 +30,15 @@ namespace SimplePMServices.Controllers
         public IEnumerable<Group> GetGroups()
         {
 
+            var groups =  _context.Groups
+                             .Include(g => g.GroupBudgets)
+                             .OrderBy(g => g.Lft);
 
-            return _context.Groups.AsQueryable();
+            foreach (Group group in groups) {
+                group.GroupBudgets = group.GroupBudgets.OrderBy(gb => gb.BudgetYear).ToList();
+            }
+
+            return groups.AsQueryable();
         }
 
         // GET: api/Groups/5

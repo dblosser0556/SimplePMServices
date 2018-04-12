@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using SimplePMServices.Models.Entities;
+using SimplePMServices.ViewModels;
 
 namespace SimplePMServices.Data
 {
@@ -18,8 +19,9 @@ namespace SimplePMServices.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            
+
             base.OnModelCreating(builder);
+            builder.Query<ProjectMonthlyProjection>().ToTable("V_ProjectMonthlyProjections");
         }
 
 
@@ -46,17 +48,22 @@ namespace SimplePMServices.Data
         public DbSet<ResourceMonth> ResourceMonths { get; set; }
         public DbSet<ResourceType> ResourceTypes { get; set; }
 
-        public DbSet<Role> ProjectRoles { get; set; }        
-        
+        public DbSet<Role> ProjectRoles { get; set; }
+
         public DbSet<Status> Status { get; set; }
 
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<VendorInvoice> Invoices { get; set; }
-        public DbSet<VendorPeriod> VendorPeriods { get; set; } 
+        public DbSet<VendorPeriod> VendorPeriods { get; set; }
         public DbSet<Milestone> Milestones { get; set; }
-        
-        
-        
-        
+
+        public DbQuery<ProjectMonthlyProjection> ProjectMonthlyProjections { get; set; }
+
+
+
+
+
+
+
     }
 }
