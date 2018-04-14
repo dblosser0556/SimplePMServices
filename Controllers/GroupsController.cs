@@ -146,7 +146,7 @@ namespace SimplePMServices.Controllers
 
             _context.Groups.Remove(group);
             await _context.SaveChangesAsync();
-
+            await RebuildHierarchyOrder();
             return Ok(group);
         }
 
@@ -269,7 +269,7 @@ namespace SimplePMServices.Controllers
                 foreach (var item in results)
                 {
                     int left = right;
-                    if (item.Level == 1)
+                    if (item.ParentId == 0)
                     {
                         right = await RebuildTree(item, left, 1);
                     }
