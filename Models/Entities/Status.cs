@@ -15,6 +15,8 @@ namespace SimplePMServices.Models.Entities
         [StringLength(50)]
         public string StatusName { get; set; }
         public string StatusDesc { get; set; }
+        public bool Dashboard { get; set; }
+        public int Order { get; set; }
 
 
 

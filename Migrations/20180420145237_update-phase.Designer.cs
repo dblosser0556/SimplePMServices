@@ -14,9 +14,10 @@ using SimplePMServices.Models.Entities;
 namespace SimplePMServices.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20180420145237_update-phase")]
+    partial class updatephase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -424,6 +425,8 @@ namespace SimplePMServices.Migrations
                     b.Property<int>("PhaseId")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<bool>("Dashboard");
+
                     b.Property<int>("Order");
 
                     b.Property<string>("PhaseDesc");
@@ -560,10 +563,6 @@ namespace SimplePMServices.Migrations
                 {
                     b.Property<int>("StatusId")
                         .ValueGeneratedOnAdd();
-
-                    b.Property<bool>("Dashboard");
-
-                    b.Property<int>("Order");
 
                     b.Property<string>("StatusDesc");
 

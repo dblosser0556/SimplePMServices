@@ -13,6 +13,8 @@ namespace SimplePMServices.Models.Entities
         [StringLength(50)]
         public string PhaseName { get; set; }
         public string PhaseDesc { get; set; }
+        public int Order { get; set; }
+
 
         //public ICollection<ProjectMonth> ProjectMonths { get; set; }
     }
