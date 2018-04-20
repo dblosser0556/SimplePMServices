@@ -14,7 +14,10 @@ namespace SimplePMServices.ViewModels
         public string ProjectManager { get; set; }
         public string ProjectManagerName { get; set; }
         public string PlannedStartDate { get; set; }
+        public string PlannedStartYear { get; set; }
         public string ActualStartDate { get; set; }
+        public string ActualStartYear { get; set; }
+        public string FilterYear { get; set; }
         public int GroupId { get; set; }
         public int StatusId { get; set; }
         public string GroupName { get; set; }

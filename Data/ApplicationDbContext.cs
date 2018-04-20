@@ -22,6 +22,7 @@ namespace SimplePMServices.Data
 
             base.OnModelCreating(builder);
             builder.Query<ProjectMonthlyProjection>().ToTable("V_ProjectMonthlyProjections");
+            builder.Query<ProjectMilestone>().ToTable("V_ProjectMilestones");
         }
 
 
@@ -58,7 +59,7 @@ namespace SimplePMServices.Data
         public DbSet<Milestone> Milestones { get; set; }
 
         public DbQuery<ProjectMonthlyProjection> ProjectMonthlyProjections { get; set; }
-
+        public DbQuery<ProjectMilestone> ProjectMilestones { get; set; }
 
 
 
