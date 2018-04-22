@@ -88,6 +88,7 @@ namespace SimplePMServices.Controllers
 
             phase.PhaseName = item.PhaseName;
             phase.PhaseDesc = item.PhaseDesc;
+            phase.Order = item.Order;
 
             _appDbContext.Phases.Update(phase);
             _appDbContext.SaveChanges();
