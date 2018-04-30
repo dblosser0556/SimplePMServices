@@ -506,7 +506,7 @@ namespace SimplePMServices.Controllers
                     }
                 }
 
-                return NoContent();
+                return Ok(existingProject);
 
             } else
             {
