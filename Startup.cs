@@ -45,9 +45,18 @@ namespace SimplePMServices
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<ApplicationDbContext>(options =>
+            // Use SQL Database if in Azure, otherwise, use SQLite
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
+                services.AddDbContext<ApplicationDbContext>(options =>
+                        options.UseSqlServer(Configuration.GetConnectionString("MyDbConnection")));
+            else
+                services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"),
                  b => b.MigrationsAssembly("SimplePMServices")));
+
+            // Automatically perform database migration
+            services.BuildServiceProvider().GetService<ApplicationDbContext>().Database.Migrate();
+            
 
             services.AddSingleton<IJwtFactory, JwtFactory>();
 
