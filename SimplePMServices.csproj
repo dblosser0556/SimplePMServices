@@ -1,8 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <UserSecretsId>505b78cb-295f-4c5f-a45f-2561e8816c63</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="appsetting.production.json" />
+  </ItemGroup>
 
   <ItemGroup>
     <Folder Include="wwwroot\" />
@@ -13,17 +18,21 @@
     <PackageReference Include="automapper.extensions.microsoft.dependencyinjection" Version="3.2.0" />
     <PackageReference Include="fluentvalidation" Version="7.4.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="7.4.0" />
-    <PackageReference Include="microsoft.aspnet.cors" Version="5.2.3" />
+    <PackageReference Include="microsoft.aspnet.cors" Version="4.6.1" />
     <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.0-preview1-final" />
     <PackageReference Include="Microsoft.AspNetCore.OData" Version="7.0.0-beta1" />
     <PackageReference Include="microsoft.aspnetcore.staticfiles" Version="2.1.0-preview1-final" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.0-preview1-final" />
-    <PackageReference Include="newtonsoft.json" Version="10.0.3" />
+    <PackageReference Include="newtonsoft.json" Version="11.0.2" />
   </ItemGroup>
 
 <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.1.0-preview1-final" />
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.1.0-preview1-final" />
   </ItemGroup>
+
+<ItemGroup>
+  <None Include="appsetting.production.json" />
+</ItemGroup>
   
 </Project>
