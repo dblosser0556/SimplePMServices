@@ -57,6 +57,7 @@ namespace SimplePMServices.Data
         public DbSet<VendorInvoice> Invoices { get; set; }
         public DbSet<VendorPeriod> VendorPeriods { get; set; }
         public DbSet<Milestone> Milestones { get; set; }
+        public DbSet<Characteristic> Characteristics { get; set; }
 
         public DbQuery<ProjectMonthlyProjection> ProjectMonthlyProjections { get; set; }
         public DbQuery<ProjectMilestone> ProjectMilestones { get; set; }

@@ -16,8 +16,10 @@ namespace SimplePMServices.Data
             EntitySet<Phase>(nameof(ApplicationDbContext.Phases));
             EntitySet<Project>(nameof(ApplicationDbContext.Projects));
             EntitySet<Budget>(nameof(ApplicationDbContext.Budgets));
+            EntitySet<Group>(nameof(ApplicationDbContext.Groups));
             EntitySet<GroupBudget>(nameof(ApplicationDbContext.GroupBudgets));
-            
+            EntitySet<Characteristic>(nameof(ApplicationDbContext.Characteristics));
+
         }
     }
 }
